@@ -1,0 +1,107 @@
+---
+title: "Homework 4"
+author: "Tyler Detrick"
+date: "2023-02-14"
+output:
+  pdf_document: default
+---
+# Problem 1
+```{r}
+# Load the forecast library
+library(forecast)
+
+# Preview of the AirPassengers data
+head(AirPassengers)
+
+# Plot - log of AirPassengers data
+plot(log(AirPassengers))
+
+# Decompose log of AirPassengers data
+APdecomp<-decompose(log(AirPassengers))
+
+# Plot - decomposed log of AirPassengers data
+plot(APdecomp)
+
+# Fit Holt-Winters model to log of AirPassengers data
+HoltWinters(log(AirPassengers),beta=TRUE,gamma=TRUE)
+
+# Plot the Holt-Winters model
+mod1<-HoltWinters(log(AirPassengers),beta=TRUE,gamma=TRUE)
+plot(mod1)
+
+# Forecast next 10 periods for this Holt-Winters model
+mod1fs<-forecast(mod1,h=10)
+
+# Plot forecast for the next 10 periods for this Holt-Winters model
+plot(mod1fs)
+
+# Fit ARIMA model to log of AirPassengers data
+auto.arima(log(AirPassengers))
+
+# Forecast next 10 periods for this ARIMA model
+mod2<-auto.arima(log(AirPassengers))
+mod2fs<-forecast(mod2,h=10)
+
+# Plot forecast for next 10 periods for this ARIMA model
+plot(mod2fs)
+```
+
+### Problem 1 Discussion
+Using both Holt-Winters and ARIMA as a means of predicting future data, we have two different attempts at forecasting based on these types of models.
+
+First, with Holt-Winters, there is an attempt to predict future values through exponential smoothing by a set of parameters. These models use lots of information from the past to find "expected" or "predicted" values for the future. It does all of this through three parameters - alpha for level, beta for trend and gamma for seasonality. With this model in the code above, after decomposing the data, the graph shows both trend and seasonality to the data in AirPassengers. So triple exponential smoothing seems like the best approach to predicting future values, as all three parameters appear present. From the graph we can see the next 10 predicted time periods follow a 'smoothed' out version of previous trends, which is expected. The next time point seems accurate to follow previous data, which relatively appropriate 80% and 95% confidence bounds. But as the data begins to extend into 2, 3, 4, etc. time periods past the present data, we can see a disconnect. First, the peaks and valleys are not as drastic. So we can assume that those predictions will not account for the highs and lows that are seen in past data. Second, the confidence bounds explode the further we get away from the first predicted time period. While this model may be a good fit to forecast the next time period, I would not use it for forecasting much further out than that.
+
+With ARIMA, this forecasting tool takes a stationary approach of more recent historical data to predict future values. This model focuses on three parameters - p which is the number of auto-regressive terms, d which is the number of nonseasonal differences, and q which is the number of lagged forecast errors. Since using the auto.arima function factors in seasonality, we can interpret the numerical data and graph to compare forecasting. Visually, it is easy to see how closely the next 10 predicted time periods were forecast very similarly to previous historical data. Seasonality and trend were both respected as well in the forecast data. Another thing to note is both the 80% and 95% confidence bounds are small and do not explode as we approach periods 8, 9, and 10 of the predicted values. 
+
+Based on the two models above, I would choose the ARIMA model for a few different reasons. First, visually it appears to have a smaller margin of error the farther out one attempts to forecast. Most of this is based on parameters. While it may not be a smart business decision to attempt to forecast so far out into the future, it would be nice to present a visual with less error if asked. Second, it seems to respect trend and seasonality more than the Holt-Winters model. Personally, I would want to know and see these expected peaks and valleys as we have seen previously as opposed to a 'smoothed' out trend based on more past data. Lastly, ARIMA models return AIC which is a metric that can be used for interpretation and measurement. In certain decisions, having a measurable metric is favorable to making a point.
+
+# Problem 2
+```{r}
+# Preview of the wineind data
+head(wineind)
+
+# Decompose wineind data
+winedecomp<-decompose(wineind)
+
+# Preview wineind data by month
+head(winedecomp$seasonal)
+
+# Plot decomposed wineind data
+plot(winedecomp)
+
+# Create time series of wineind data
+wineind_ts<-ts(wineind)
+
+# Calculate differences
+wineind_d1=diff(wineind_ts,differences=1)
+
+# Plot differences of 1
+plot(wineind_d1)
+
+# Calculate autocorrelation where differences is 1
+acf(wineind_d1)
+
+# Calculate autocorrelation without plot
+acf(wineind_d1,plot=FALSE)
+
+# Fit Holt-Winters model to wineind data
+HoltWinters(wineind,beta=FALSE)
+
+# Fit manual ARIMA model to wineind data with differences and seasonality
+arima(wineind,order=c(1,1,2),seasonal=c(0,1,1))
+
+```
+
+### Problem 2 Discussion
+First, I wanted to detect if there was any trend or seasonality to the data. After decomposing the data, it is safe to say that there is seasonality to the wineind data, but trend seems to not exist with the more recent data. Yes, in the beginning there was an increasing trend, but it leveled off. Next, calculating differences. With this, we want to determine the number/order of differences needed to create stationary data in the time series. We want a low number for differences, so that we have a well-defined forecasting model. After using the diff function with differences set to 1, the plot shows randomness that we would expect of a stationary series. So we will stick with differences set to 1. Next, calculating the autocorrelation using the acf function, the graph shows us the expected lags. With the graph showing the upper and lower confidence bounds we can see what exceeds the threshold. In this example, we can see that a lag of 2 at -0.313 is what exceeds it. 
+
+Looking at the Holt-Winters model in the example, the model is run with alpha for level and gamma for seasonality parameters, but excludes beta as we determined there was no trend in the data above. From the coefficients, we can see times in the season, or specific months, and the wine bottle sales in regards to a baseline of the previous time period. For example, our largest coefficient is 12088.1627 in s4 or April. While our lowest is -8965.2360 in s5 or May. In comparison to the ARIMA model, we used a p value of 1, d values of 1, q value of 2 in the order part of the function based on our interpretations of the above code. Since we agreed seasonality is a factor in this data set, we use a p value of zero based on the need for an auto regressive term, d value of 1 to include differences in the seasonality piece, and a q value of 1 to also include lag structure in the seasonality piece of the ARIMA model. We can interpret the model with the auto regressive term of with a coefficient of 0.4299, moving average coefficients of -1.4673 for the first and 0.5339 for the second, and seasonal moving average of -0.6600. Overall, the ARIMA model returned an AIC of 3004.1 which is a large number. I feel confident in the ARIMA model above.
+
+
+### Extra
+Personally, I would like to use code to run an auto.arima model to check.
+
+```{r}
+# Run auto.arima to double check manual formula
+auto.arima(wineind)
+```
