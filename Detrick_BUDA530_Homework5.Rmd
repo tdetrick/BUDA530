@@ -1,0 +1,168 @@
+---
+title: "Homework 5"
+author: "Tyler Detrick"
+date: "2023-02-20"
+output: pdf_document
+---
+
+# Problem 1
+```{r}
+# Load the ISLR library
+library(ISLR)
+
+# Load the Wage data into the environment
+attach(Wage)
+
+# Preview the data in Wage
+head(Wage)
+
+# Load the tidyverse library
+library(tidyverse)
+
+# Convert Wage for easier analysis
+wage1<-as_tibble(Wage)
+
+# Filter out wages above 250K
+wage_u250<-wage1 %>% filter(wage<250)
+
+# Display new dataset
+wage_u250
+
+# Fit polynomial models with increasing degrees of the age variable
+mod1<-lm(wage~poly(age,2,raw=FALSE),data=wage_u250)
+mod2<-lm(wage~poly(age,3,raw=FALSE),data=wage_u250)
+mod3<-lm(wage~poly(age,4,raw=FALSE),data=wage_u250)
+mod4<-lm(wage~poly(age,5,raw=FALSE),data=wage_u250)
+
+# Run AIC to determine best polynomial of the age variable
+AIC(mod1,mod2,mod3,mod4)
+
+# Plot wage by age in regards to jobclass to understand if there is a relationship between these two variables
+plot(wage~age,data=wage_u250,main="Wage vs. Age by Job Class",pch=20,col=jobclass)
+
+# Fit polynomial models with increasing degrees of the year variable
+mod5<-lm(wage~poly(year,2,raw=FALSE),data=wage_u250)
+mod6<-lm(wage~poly(year,3,raw=FALSE),data=wage_u250)
+mod7<-lm(wage~poly(year,4,raw=FALSE),data=wage_u250)
+mod8<-lm(wage~poly(year,5,raw=FALSE),data=wage_u250)
+
+# Run AIC to determine best polynomial of the year variable
+AIC(mod5,mod6,mod7,mod8)
+
+# Fit polynomial models with increasing degrees of the education variable
+mod9<-lm(wage~education,data=wage_u250)
+mod10<-lm(wage~poly(education,2,raw=FALSE),data=wage_u250)
+mod11<-lm(wage~poly(education,3,raw=FALSE),data=wage_u250)
+mod12<-lm(wage~poly(education,4,raw=FALSE),data=wage_u250)
+
+# Run AIC to determine best polynomial of the year variable
+AIC(mod9,mod10,mod11,mod12)
+
+# Fit a polynomial model of age and year against wage
+mod13<-lm(wage~poly(age,4,raw=FALSE)+poly(year,2,raw=FALSE),data=wage_u250)
+
+# Run AIC on model 13
+AIC(mod13)
+
+# Fit polynomial model of age, year and education against wage
+mod14<-lm(wage~poly(age,4,raw=FALSE)+poly(year,2,raw=FALSE)+poly(education,2,raw=FALSE),data=wage_u250)
+
+# Run AIC of new polynomial model
+AIC(mod14)
+
+# Load the gam library
+library(gam)
+
+# Fit a GAM model with smoothing splines of polynomial model from above
+mod15<-gam(wage~s(age,4)+s(year,3)+education,data=wage_u250)
+plot(mod15,se=TRUE,col=3)
+
+# Total number of wages from subset that are below 104k
+sum(wage_u250$wage<104)
+
+# Total number of wages from subset that are equal to 104k
+sum(wage_u250$wage==104)
+
+# Total number of wages from subset that are above 104k
+sum(wage_u250$wage>104)
+
+# Wage predictions based on polynomial model with age and year as predictors
+mod13p<-predict(mod13,data=wage_u250)
+
+# Transform atomic vector to data frame
+mod13df<-as.data.frame(mod13p)
+
+# Total number of wages from model 13 prediction that are below 104k
+sum(mod13df$mod13p<104)
+
+# Total number of wages from model 13 prediction that are below 104k
+sum(mod13df$mod13p>104)
+
+# Wage predictions based on polynomial model with age, year and education as predictors
+mod14p<-predict(mod14,data=wage_u250)
+
+# Transform atomic vector to data frame
+mod14df<-as.data.frame(mod14p)
+
+# Total number of wages from model 14 prediction that are below 104k
+sum(mod14df$mod14p<104)
+
+# Total number of wages from model 14 prediction that are below 104k
+sum(mod14df$mod14p>104)
+
+# Wage predictions based on GAM model with age, year and education as predictors
+mod15p<-predict(mod15,data=wage_u250)
+
+# Transform atomic vector to data frame
+mod15df<-as.data.frame(mod15p)
+
+# Total number of wages from model 15 prediction that are below 104k
+sum(mod15df$mod15p<104)
+
+# Total number of wages from model 15 prediction that are below 104k
+sum(mod15df$mod15p>104)
+
+```
+### Problem 1 Discussion
+
+# Problem 2
+```{r}
+# Load the forecastML library
+library(forecastML)
+
+# Load the lubridate library
+library(lubridate)
+
+# Load the prophet library
+library(prophet)
+
+# Preview the seatbelts data
+head(data_seatbelts)
+
+# Clean the data by removing missing values
+data_seatbelts_clean<-na.omit(data_seatbelts[,4])
+
+# Create a list of dates
+dates<-seq(as.Date("1969-01-01"),as.Date("1984-12-01"),by="month")
+
+# Create ds in regards to law
+data_seatbelts_clean$ds<-lubridate::ymd(dates)
+
+# Create y in regards to drivers killed
+data_seatbelts_clean$y<-data_seatbelts_clean$DriversKilled
+
+# Create training set by keeping observations before the law was in effect
+data_seatbelts_clean_train<-data_seatbelts_clean[data_seatbelts_clean$ds<ymd("1983131"),]
+
+# Initialize prophet model without fitting
+prophetmod1<-prophet(data_seatbelts_clean_train,fit=FALSE)
+
+# Add external regressors of 'kms', 'PetrolPrice' and 'law'
+prophetmod1<-add_regressor(prophetmod1,"kms")
+prophetmod1<-add_regressor(prophetmod1,"PetrolPrice")
+prophetmod1<-add_regressor(prophetmod1,"law")
+
+prophetmod1<-fit.prophet(prophetmod1,data_seatbelts_clean_train)
+```
+
+### Problem 2 Discussion
