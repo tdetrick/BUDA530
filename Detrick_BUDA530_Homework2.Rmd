@@ -1,0 +1,95 @@
+---
+title: "Homework 2"
+author: "Tyler Detrick"
+date: "2023-01-31"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Problem 1
+```{r}
+library(faraway)
+attach(wbca)
+wbca <-wbca
+head(wbca)
+
+pairs(wbca,col=(wbca$Class+3))
+mod1<-glm(Class~.,family="binomial",data=wbca)
+summary(mod1)
+
+modN<-glm(Class~1,family="binomial",data=wbca)
+anova(mod1,modN, test="Chi")
+
+step(mod1)
+```
+### Problem 1 Discussion
+As we continue to interpret slope now as increase/decrease in the 'log odds' given the predictor is increased by one unit, a negative coefficient in regards to the predictor variables will indicate that the probability is decreasing or getting closer to zero. With our intercept, or tuning parameter in the case, of the response variable 'Class', we can see that the log odds are 11.16678 if all other variables are at zero, meaning that this positive intercept coefficient points us in the direction that the probability is closer to 1 or a benign diagnosis. With that being said, nearly all other variables have a negative coefficient besides 'Usize' - cell size uniformity. So, the 8 other predictor variables coefficients are as follows: 'Adhes' at -0.39681, 'BNucl' at -0.41478, 'Chrom' at -0.56456, 'Epith' at -0.06440, 'Mitos' at -0.65713, 'NNucl' at -0.28659, 'Thick' at -0.62675, 'UShape' at -0.28011. All of these negative coefficients lead us to infer that as the intercept increases, the probability of a tumor being benign decreases. These negative coefficients are driving the response variable of 'Class' towards zero or the diagnosis of a malignant tumor. In contrast, the predictor variable of 'Usize' is positive at 0.05718 which leads us to infer that as the intercept increases, the probability of a tumor being benign increases - driving the probability towards one.
+
+In regards to deviance, we can see that the residual deviance in much smaller than the null deviance. Null deviance at 881.388 against a residual deviance of 89.464. The smaller deviance is the number we are wanting, so we will reject the null hypothesis - or the model fitted with only the intercept. Further solidifying this point would be the chi test, where the p-value is low. Again, this leads us to reject the null hypothesis. 
+
+In regards to model selection - by using the z test and z values - we can determine that 'BNucl' and 'Thick' predictor variables have a high level of significance in the model. Both returning z values near zero. 'Adhes', 'Chrom' and 'NNucl' all return a level of significance that makes them predictor varibles that create a better model. But, in my opinion before running a model selection tool, looking at the others - removing 'Epith', 'Ushape' and 'Usize' would create a better fitting model. All of this is based on z values being significantly above 0.05. 'Mitos' is a predictor variable that is close to the 0.05 threshold, so personally, I would like to see how the STEP function creates a better model.
+
+When using STEP, the best model for this data set is to use 'Class' as the response variable and 'Ushape', 'Mitos', 'NNucl', 'Adhes', 'Chrom', BNucl', and 'Thick' as the predictor variables. STEP removed 'Epith' and 'Usize' as predictor variables in the model for best fit at predicting the 'Class' of a tumor. Different from my original prediction, 'Ushape' staying in the model, as the significance of the variable became more prominent as the other two were removed. Returning an overall AIC value of 105.66 compared to the model of all variables at an AIC value of 109.46.
+
+# Problem 2
+```{r}
+attach(aflatoxin)
+aflatoxin <- aflatoxin
+head(aflatoxin)
+
+mod2 <- glm(cbind(tumor,total-tumor)~dose,family="binomial",data=aflatoxin)
+summary(mod2)
+plot(tumor/total~dose, ylab="% of rats with liver cancer", xlab="dose (in ppb")
+x <- seq(0,100,2)
+lines(x,ilogit(predict(mod2, newdata=data.frame(dose=x))), col=3)
+ilogit(predict(mod2, newdata=data.frame(dose=25)))
+
+new.dat <- data.frame(dose=25)
+predict(mod2, newdata=new.dat, interval="confidence")
+```
+### Problem 2 Discussion
+As we interpret slope as increase/decrease in the 'log odds' given the predictor is increased one unit, the intercept is not deemed a tuning parameter because it can hold a value of zero. So, to reiterate the coefficients, if dose is at zero, we have an intercept of -3.03604. While it is not possible to have a negative count at zero, this just determines the slope of the line. For dose, we have a coefficient of 0.09009. To interpret this, as we increase the intercept, we see an increase in the probability of liver cancer in the test animals. As the dose will continue to increase, the presence of test animals with liver cancer will also increase exponentially. Other components of the model to note are that both z values are highly significant to the model, both approaching near zero. As well as residual deviance being at 2.897 compared to null deviance of 116.524, which leads us to reject the null hypothesis and accept the model where dose is the predictor variable. 
+
+The predicted probability of a test animal developing liver cancer at a 25 ppb dose is 0.3134978 or 31.35% probability. 
+
+Attempting to produce a confidence interval, the confint function throws an 'atomic vector' error. This makes sense as we are not working with linear functions - instead working with a predicted dose value that was not in the original data set as well as the glm in this instance in nonlinear. Trying to predict the confidence interval based on the dose (code is still present) returned a value of -0.7838171. No upper or lower limits were produced. I would say that it is not possible to produce a confidence interval for this predicted value of dose 25 ppb.
+
+# Problem 3
+```{r}
+library(MASS)
+attach(esoph)
+esoph <- esoph
+head(esoph)
+
+mod3 <- polr(as.factor(ncases)~.-ncontrols,data=esoph)
+summary(mod3)
+mod4 <- step(mod3)
+AIC(mod3)
+AIC(mod4)
+```
+### Problem 3 Discussion
+In the original model, we looked at number of cases versus age group, alcohol consumption, and tobacco consumption. We do loose some ability to interpret the model with the loss of p values, so we will use AIC to determine model validity. Based on the original model, with the varying factors of age, alcohol consumption and tobacco consumption, we have an AIC of 276.875.
+
+Using STEP to for model selection, we return the same model as the previous. The response variable of 'ncases' and predictor variables of 'agegp', alcgp', and 'tobgp'. This model returns the same AIC of 276.875, meaning our original model is the best fit for this particular instance.
+
+# Problem 4
+```{r}
+library(MASS)
+attach(Boston)
+Boston <- Boston
+head(Boston)
+
+Boston$res <- Boston$medv >= median(Boston$medv)
+mod5 <- glm(res~.-medv,data=Boston,family="binomial")
+summary(mod5)
+step(mod5)
+```
+
+### Problem 4 Discussion
+From the original model, where we are looking at all other variables besides 'medv', we have a mix of positive and negative coefficients. Variables like 'crim', 'nox', 'age', 'dis', 'tax, 'ptratio', and 'lstat' all have negative coefficients - meaning as the intercept increases by one, the median overall value of the home is reducing. These predictors variables lower the value of the home as they increase. In contrast, variables like 'zn', 'indus', 'chase', 'rm', 'rad', and 'black' all have positive coefficients - meaning as the intercept increases by one, the median overall value of the home in increasing. These predictor variables increase the value of the home as they increase. 
+
+Using model selection, STEP returned a model of best fit involving predictor variables of 'crim' - per capita crim rate by town, 'black' - proportion of blacks by town, 'chas' - Charles River variable, 'nox' - nitrogen oxide concentration, 'age' - proportion of owner-occupied units built prior to 1940, 'tax' - full-value property-tax per $10,000, 'rm' - average number of rooms, 'rad' - accessibility to radial highways, 'dis' - distance to Boston employment centers, 'ptratio' - pupil/teacher ratio, and 'lstat' - lower economic status of population.
+
+To explain this model to someone looking at houses, we can use the new summary of the 'best' model that the STEP function chose for us. Predictor variables to consider in regards to lowering the value of the house are 'crim', 'nox', 'age', 'dis', 'tax', ptratio', and 'lstat'. Most of these make sense. Increased crime rates will lower the value of a house, increased nitrogen oxide levels lower the value of a house, the older a house means the lower the value, distance to and from work will lower the value of a house, increased property-tax rates will lower the value of a house, an increased student to teacher ration will lower the value of a house, and the lower the status of the population surrounding the house will lower the value as well. In contrast, predictor variables to consider in regards to increasing the value of a house are 'chas', 'rm', 'rad' & 'black'. Increased proximity to the Charles River increases the value of a house, increased number of rooms increases the value of a house, increased accessibility to radial highways increases the value of a house, and increased black population increases the value of a house. 
+
+To filter it down to simple terms, increased crime rates, chemical levels, age, distance from work, taxes, student/teacher ratio, economic status will lower the value of a home. While increased proximity to the river, rooms per house, and access to highways will increase the value of a home. Per ethical standards, I would remove the 'black' variable from the model if presenting this in a real setting, because race is not a factor to consider when determining value.
