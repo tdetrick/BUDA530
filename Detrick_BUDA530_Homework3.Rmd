@@ -1,0 +1,192 @@
+---
+title: "Homework 3"
+author: "Tyler Detrick"
+date: "2023-02-07"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Problem 1
+```{r}
+# Load the faraway library
+library(faraway)
+
+# Create a data frame from the discoveries dataset
+discoveries <- data.frame(discoveries)
+
+# Name the count variable
+colnames(discoveries)[1] <-"number_of_inventions_and_discoveries"
+
+# Preview the dataframe
+head(discoveries)
+
+# Fit a poisson model of number of inventions and discoveries against year
+mod1<-glm(number_of_inventions_and_discoveries~.,data=discoveries,family=poisson)
+
+# Summary of model for interpretation
+summary(mod1)
+```
+### Problem 1 Discussion
+From the model, the coefficients are represented as the log of the expected value of Y, and we can interpret this in regards to beta in a way to discuss the technical piece of the model. Since we fit the number of "great" inventions and discoveries against the year in this model, we can interpret the coefficients with that mentality. The model shows that as the years progress, the mean number of "great" inventions and discoveries also increases with the intercept term of 1.1314. The standard error is low at 0.0568 and a strong z test value of 19.92. Lastly, the p-value is a number near zero, so we can infer that the model is significant in regards to the mean number of "great" inventions or discoveries increase exponentially over the 100 year span as the years progress from 1860 to 1959.
+
+The poisson model above sets to understand the number, or count, of "great" inventions or discoveries over a 100 year span from the latter part of the 1800's into the mid 1900's. From the model, we can determine that the average number of "great" inventions or discoveries increase over time, at about an increase of 1 per year on average. There could be a number of socio-economical reasons for such an increase. Examples could be increases knowledge, awareness, technology growth, societal growth, etc. The list could go on and on, and require extensive research to put a reason 'why' the number increased. With that being said, we can conclude from the model above that the number of "great" inventions and discoveries continued to grow throughout the 100 year time span from 1860 to 1959 from the dataset.
+
+# Problem 2
+```{r}
+# Load the hsb data into the environment
+attach(hsb)
+
+# Preview the data in hsb
+head(hsb)
+
+# Summary of hsb data
+summary(hsb)
+
+# Creation of tables to see how certain variables are related to the 'prog' variable
+table(hsb$gender,hsb$prog)
+table(hsb$race,hsb$prog)
+table(hsb$read,hsb$prog)
+table(hsb$write,hsb$prog)
+
+# Create a boxplot of 'prog' against 'read'
+boxplot(prog~read,data=hsb)
+
+# Create a boxplot of 'prog' against 'write'
+boxplot(prog~write,data=hsb)
+
+# Create a boxplot of 'prog' against 'math'
+boxplot(prog~math,data=hsb)
+
+# Load the nnet library
+library(nnet)
+
+# Fit a multinomial using 'read', 'write', 'math', 'science' and 'socst' as predictors and 'prog' as the response
+mod2<-multinom(prog~read+write+math+science+socst,data=hsb)
+
+# Summary of multinomial model
+summary(mod2)
+
+# Load the effects library
+library(effects)
+
+# Plot the effects of all predictors on 'prog
+plot(allEffects(mod2))
+
+# Random test sample for prediction, fit multinomial model same as above but minus the test sample
+set.seed(940)
+Test<-sample(1:500,200,replace=FALSE)
+mod3<-multinom(prog~read+write+math+science+socst,data=hsb[-Test,])
+
+# Prediction of the new data against the test sample
+pred<-predict(mod3,newdata=hsb[Test,])
+head(pred)
+
+# Table of the predictions
+table(pred,hsb$prog[Test])
+
+# Sum of the table minus the diagonals - true values
+sum(table(pred,hsb$prog[Test]))-sum(diag(table(pred,hsb$prog[Test])))
+
+# Prediction of the probability of based on model against the test data
+prob<-predict(mod3,newdata=hsb[Test,],type="probs")
+head(prob)
+```
+### Problem 2 Discussion
+From the prompt, we are tasked with fitting a model that explains a person's program type - either academic, general or vocational - based on the observed variables. After looking at several variables from the data set, utilizing the tables and box plots from the code, the model chosen fits the five score variables of 'read', 'write', 'math', 'science', and 'socst' as the predictors variables against the response variable of 'prog'. From the summary of the model, we can interpret the coefficients with academic being the base line type for 'prog' against general and vocational. Generally speaking, almost all coefficients from the summary are negative in regards to the general and vocational subtypes from the 'prog' variable. This means that as scores in these areas increase, the probability of a student choosing a general or vocational program decreases. For example, with the 'read' variable, we have a coefficient of -0.04558434 for general and -0.03583817 for vocational. This means that as reading scores increase by 1, there is a decrease in the probability that a student will choose a general or vocational program. With the 'write', 'math' and 'socst' variables, we have the same understanding. To note, the science variable does not follow this trend. We have a positive coefficient of 0.09359693 for general and 0.05902499 for vocational. This means that as science scores increase by 1, there is an increase in the probability that a student will choose a general or vocational program. With no z test statistics or p-values, we can turn to deviance and AIC for model validation. After fitting multiple models against the 'prog' variable, this multinomial returned the lowest AIC of 353.9511.
+
+Also, I wanted to test the prediction of the model in determining a program pathway using a random test sample. From the information in the code, the model predicted 33 out of 200 incorrectly. Now, this does not include any null values in the 'prog' variable, but that is about a 16.5% error from that random sample.
+
+With the problem at hand, we want to be able to understand and predict the variables that determine a student's choice in program type after high school. Within the data, we have variables of ID and school type that were chosen to be excluded from the model based on their relevance to the problem at hand. Next, we have variables of gender, race and socioeconomic class. All of these variables deal with demographics of the student population in the data, and while there may be correlations between these variables and the program chosen, it does not seem appropriate to include these as decision variables in regards to program type chosen by the student. Ultimately, the five score variables were fit to the model against program type as means to understand the choice by the student. 
+
+In the end, we can use coefficients to understand the model, but an easier way would be to visualize the data which is where the effects plots come into play. In regards to 'read', 'write', 'math' and 'socst', the probability of a student choosing an academic pathway increases as scores increase. In contrast, the probability of a student choosing a general or vocational pathway decreases as the scores decrease. The only variable that does not follow this trend is science, in fact it is the opposite. In regards to 'science', the probability of a student choosing an academic pathway decreases as scores increase. In contrast, the probability of a student choosing a general or vocational pathway increases as the scores decrease. I would like to do a little more research into this someday, just for curiosity purposes. All in all, it is safe to say that as scores increase for students, the probability of an academic pathway increases.
+
+# Problem 3
+```{r}
+# Load the dvisits data into the environment
+attach(dvisits)
+
+# Preview of the data
+head(dvisits)
+
+# Fit a poisson model of 'doctorco' against 'sex', 'age', 'agesq', 'income', 'levyplus', 'freepoor', 'freerepa', 'illness', 'actdays', and 'hscore'
+mod4 <-glm(doctorco~sex+age+agesq+income+levyplus+freepoor+freerepa+illness+actdays+hscore,data=dvisits,family=poisson)
+
+# Summary of poisson model
+summary(mod4)
+
+# Step for model selection
+step(mod4)
+
+# Summary of step model
+summary(step(mod4))
+
+# Linear model of step ideal model
+mod5 <- lm(doctorco~sex+age+income+levyplus+freepoor+illness+actdays+hscore,data=dvisits)
+
+# Summary of linear model
+summary(mod5)
+```
+### Problem 3 Discussion
+Since we interpret deviance the same as we would with logistic regression, we can use that to comment on this model. So in regards to deviance, we can see that the residual deviance is smaller than the null deviance. Null deviance at 5634.8 against a residual deviance of 4384.2. The smaller deviance is the number we are wanting, so we will reject the null hypothesis - or the model fitted with only the intercept. Also, our AIC for this model is 6736.7 just to make a note before we perform model selection to find a better fit.
+
+Using STEP for model selection returned a model that removed two variables from the previous one. 'Agesq' and 'freerepa' were both removed to create a model that was a better fit for the question at hand. Our residual deviance is relatively the same at 4385.5, as well as our AIC at 6735.02. Looking at the summary of the better fitting model, we can see that both 'age' and 'freepoor' became more significant variables in regards to their z test and p-values.
+
+When comparing it to an OLS model, we get a completely different set of results. Most important to note is that certain variables are not significant in the linear model as compared to the poission model. 'Sex' and 'freepoor' are two examples of this. Also, the r-squared value for the linear model is only 0.2002 which is extremely low. Overall, if we used the linear model - we would still be searching for a better fitting model. Whereas with the poisson model, we have found that model.
+
+# Problem 4
+```{r}
+# Load the MASS library
+library(MASS)
+
+# Load the happy data into the environment
+attach(happy)
+
+# Create a data frame from the happy dataset
+happy <- data.frame(happy)
+
+# Transform happy variable into factor variable
+happy$happy <- factor(happy$happy)
+
+# Preview of the data
+head(happy)
+
+# Fit a proportional odds model with 'happy' as the response and all other variables as predictors
+mod6 <-polr(happy~.,data=happy)
+mod6
+# Summary of the proportional odds model
+summary(mod6)
+```
+### Problem 4 Discussion
+*Looking for guidance on this, my model did not return coefficients. Unsure of how to interpret this model as well, I went back to review the slides on ordinal regression but could some additional support here.*
+
+# Problem 5
+```{r}
+# Load the pneumo data into the environment
+attach(pneumo)
+
+# Preview of the data 
+head(pneumo)
+
+# Checking structure of variables
+str(pneumo$status)
+str(pneumo$year)
+
+# Create boxplot to see how the two variables are connected
+boxplot(status~year,data=pneumo)
+
+# Fit a multinomial using 'year' as the predictors and 'status' as the response
+mod7<-multinom(status~year,data=pneumo)
+
+# Summary of multinomical model
+summary(mod7)
+
+# Fit a proportional odds model with 'status' as the response and 'year' as the predictor
+mod8<-polr(status~year,data=pneumo)
+
+# Summary of proportional odds model
+summary(mod8)
+```
+### Problem 5 Discussion
+Starting with the multinomial model, more specifically the coefficients, our base line variable is mild. So that being said, we can see both of the coefficients for normal and severe are positive, so the probability of a normal or severe cancer diagnosis increases by 1.142515 as year increases by 1. Residual deviance of 52.73339 and AIC of 60.73339 are both relatively low as well.With the proportional odds model, we see a negative coefficient of -0.6931 for mild|normal and a positive coefficient of 0.6931 for normal|severe in regards to year. Again, our residual deviance is low at 52.73339 and our AIC is even lower at 58.73339.
+
+Logarithmic transformation of data attempts to reduce a highly skewed distribution into a less skewed distribution. So with multinomial modeling, the response is returned as the log odds of the variable, which is ultimately attempting to reduce residuals or outliers in the data to create a better model. All in all, it is relevant to note that from either model, the severity of a cancer diagnosis does increase exponentially as the number of years increases. Miners with a longer career in the mines are more likely to receive a normal or severe diagnosis compared to someone with a much shorter career.
