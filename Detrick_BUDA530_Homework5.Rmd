@@ -98,6 +98,9 @@ sum(mod13df$mod13p<104)
 # Total number of wages from model 13 prediction that are below 104k
 sum(mod13df$mod13p>104)
 
+# Calulate Accuracy
+
+
 # Wage predictions based on polynomial model with age, year and education as predictors
 mod14p<-predict(mod14,data=wage_u250)
 
@@ -110,6 +113,9 @@ sum(mod14df$mod14p<104)
 # Total number of wages from model 14 prediction that are below 104k
 sum(mod14df$mod14p>104)
 
+# Calculate Accuracy
+
+
 # Wage predictions based on GAM model with age, year and education as predictors
 mod15p<-predict(mod15,data=wage_u250)
 
@@ -121,6 +127,9 @@ sum(mod15df$mod15p<104)
 
 # Total number of wages from model 15 prediction that are below 104k
 sum(mod15df$mod15p>104)
+
+# Calculate Accuracy
+
 
 ```
 ### Problem 1 Discussion
