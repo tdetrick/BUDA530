@@ -148,11 +148,11 @@ library(prophet)
 # Preview the seatbelts data
 head(data_seatbelts)
 
-# Clean the data by removing missing values
-data_seatbelts_clean<-na.omit(data_seatbelts[,4])
-
 # Create a list of dates
 dates<-seq(as.Date("1969-01-01"),as.Date("1984-12-01"),by="month")
+
+# Create new data name for coding purposes
+data_seatbelts_clean<-data_seatbelts
 
 # Create ds in regards to law
 data_seatbelts_clean$ds<-lubridate::ymd(dates)
@@ -161,7 +161,7 @@ data_seatbelts_clean$ds<-lubridate::ymd(dates)
 data_seatbelts_clean$y<-data_seatbelts_clean$DriversKilled
 
 # Create training set by keeping observations before the law was in effect
-data_seatbelts_clean_train<-data_seatbelts_clean[data_seatbelts_clean$ds<ymd("1983131"),]
+data_seatbelts_clean_train<-data_seatbelts_clean[data_seatbelts_clean$ds<ymd("1983-01-31"),]
 
 # Initialize prophet model without fitting
 prophetmod1<-prophet(data_seatbelts_clean_train,fit=FALSE)
@@ -171,6 +171,7 @@ prophetmod1<-add_regressor(prophetmod1,"kms")
 prophetmod1<-add_regressor(prophetmod1,"PetrolPrice")
 prophetmod1<-add_regressor(prophetmod1,"law")
 
+# Fit prophet model
 prophetmod1<-fit.prophet(prophetmod1,data_seatbelts_clean_train)
 ```
 
