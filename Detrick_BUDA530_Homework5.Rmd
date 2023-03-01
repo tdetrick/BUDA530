@@ -59,13 +59,13 @@ mod12<-lm(wage~poly(education,4,raw=FALSE),data=wage_u250)
 AIC(mod9,mod10,mod11,mod12)
 
 # Fit a polynomial model of age and year against wage
-mod13<-lm(wage~poly(age,4,raw=FALSE)+poly(year,2,raw=FALSE),data=wage_u250)
+mod13<-lm(wage~poly(age,4,raw=FALSE)+poly(year,3,raw=FALSE),data=wage_u250)
 
 # Run AIC on model 13
 AIC(mod13)
 
 # Fit polynomial model of age, year and education against wage
-mod14<-lm(wage~poly(age,4,raw=FALSE)+poly(year,2,raw=FALSE)+poly(education,2,raw=FALSE),data=wage_u250)
+mod14<-lm(wage~poly(age,4,raw=FALSE)+poly(year,3,raw=FALSE)+poly(education,3,raw=FALSE),data=wage_u250)
 
 # Run AIC of new polynomial model
 AIC(mod14)
@@ -75,64 +75,48 @@ library(gam)
 
 # Fit a GAM model with smoothing splines of polynomial model from above
 mod15<-gam(wage~s(age,4)+s(year,3)+education,data=wage_u250)
+
+# Run AIC of GAM model
+AIC(mod15)
+
+# Plot GAM model
 plot(mod15,se=TRUE,col=3)
-
-# Total number of wages from subset that are below 104k
-sum(wage_u250$wage<104)
-
-# Total number of wages from subset that are equal to 104k
-sum(wage_u250$wage==104)
-
-# Total number of wages from subset that are above 104k
-sum(wage_u250$wage>104)
 
 # Wage predictions based on polynomial model with age and year as predictors
 mod13p<-predict(mod13,data=wage_u250)
 
-# Transform atomic vector to data frame
-mod13df<-as.data.frame(mod13p)
+# Load the caret library
+library(caret)
 
-# Total number of wages from model 13 prediction that are below 104k
-sum(mod13df$mod13p<104)
-
-# Total number of wages from model 13 prediction that are below 104k
-sum(mod13df$mod13p>104)
-
-# Calulate Accuracy
-
+# Utilize Root Mean Squared Error for accuracy measure
+rmse1 <- RMSE(predict(mod13,wage_u250), wage_u250$wage)
+rmse_perc1 <- rmse1/mean(wage_u250$wage)*100
+rmse_perc1
 
 # Wage predictions based on polynomial model with age, year and education as predictors
 mod14p<-predict(mod14,data=wage_u250)
 
-# Transform atomic vector to data frame
-mod14df<-as.data.frame(mod14p)
-
-# Total number of wages from model 14 prediction that are below 104k
-sum(mod14df$mod14p<104)
-
-# Total number of wages from model 14 prediction that are below 104k
-sum(mod14df$mod14p>104)
-
-# Calculate Accuracy
-
+# Utilize Root Mean Squared Error for accuracy measure
+rmse2 <- RMSE(predict(mod14,wage_u250), wage_u250$wage)
+rmse_perc2 <- rmse2/mean(wage_u250$wage)*100
+rmse_perc2
 
 # Wage predictions based on GAM model with age, year and education as predictors
 mod15p<-predict(mod15,data=wage_u250)
 
-# Transform atomic vector to data frame
-mod15df<-as.data.frame(mod15p)
-
-# Total number of wages from model 15 prediction that are below 104k
-sum(mod15df$mod15p<104)
-
-# Total number of wages from model 15 prediction that are below 104k
-sum(mod15df$mod15p>104)
-
-# Calculate Accuracy
-
-
+# Utilize Root Mean Squared Error for accuracy measure
+rmse3 <- RMSE(predict(mod15,wage_u250), wage_u250$wage)
+rmse_perc3 <- rmse3/mean(wage_u250$wage)*100
+rmse_perc3
 ```
 ### Problem 1 Discussion
+Upon further investigation into the unique variables from the wage dataset, there are four that I would like to investigate in regards to their relationship to the wage of an individual. After subsetting the data, utilizing Tidyverse and a pipe function, to look at wages below $250,000, we will begin to fit polynomial models to understand how age, job class, year, and education are related to wage. First, with age, we fit a linear model with the squared, cubed, quartic, and sursolid polynomial terms of the predictor variable to the response variable of wage. Each model returned the following AIC numbers: age squared AIC is 28218.37, age cubed AIC is 28200.99, age quartic AIC is 28197.97, and age sursolid AIC is 28199.97. With AIC, we want the model with the lowest value, so we will use age quartic. Next, in regards to job class, the plot is used to look for a split of the data based on industrial versus informational. From the graph, we can see the data is random - so we will not use a predictor variable of job class in our model. Next, with year, we fit several polynomial models similar to the ones of age above. Each model returned the following AIC numbers: year squared AIC is 28513.59, year cubed AIC is 28513.37, year quartic AIC is 28515.37, and year sursolid AIC is 28517.16. From this, we will want to use year cubed. Finally, with education, we fit several polynomial models similar to age and year above. Each model returned the following AIC numbers: education squared AIC is 27742.01, education cubed AIC is 27738.50, education quartic AIC is 27740.07, and education sursolid AIC is 27742.01. From this, we will want to use education cubed.
+
+At first, I was unsure if I wanted to use education as a variable. So, initially I fit a model where wage is the response with age quartic and year cubed as the predictor variables. This model returned an AIC of 28182.29. Next, I fit a model where wage is the response with age quartic, year cubed and education cubed as the predictor variables. This model returned an AIC of 27432.72, and this lower AIC does mean that the education variable is important in determining wage of an individual. I wanted to take this a step further with a generalized additive model. With GAM, smoothing spline are placed on the age and year variables from the previous model. Education is an ordered variable, and therefore a smoothing spline cannot be applied. These smoothing splines are used to better estimate the functional relationship between the predictor variables and the response variable. Running this GAM model, it returned an AIC of 27432.85 which is extremely close to our previous linear model. From the plots, we can notice a few things. First, when looking at the plot for age we see a spike in wages at around ages 40-45 before it begins to level off and trend downwards as we approach 65. Second, when looking at the plot for year we see an increasing linear trend as year increases. Lastly, when looking at the plot for education we can see as education 'increases' so does wage. The more education a person has, the more likely their wage is to increase. All of these three variables are important and knowing their trends will help better predict future values for wage.
+
+Utilizing the caret library in r, I decided to use RMSE - root mean squared error - to understand prediction accuracy of the three models above. As RMSE is a performance indicator for regression models, it provides us with an understanding or estimation of how well the model is able to predict the target value. We can and will interpret this as the prediction accuracy of the model. First, with the linear model with age and year as the predictors - we have an RMSE value of 28.00442. Second, with the linear model with age, year and education as the predictors - we have an RMSE value of 24.60693. Lastly, with the GAM with smoothing splines of age, smoothing splines of year, and education as the predictors - we have an RMSE value of 24.59904. Based on these three error terms, and the idea that we want to minimize error, we would choose the GAM from above. These three values show the accuracy of the models, as lower error means a higher accuracy. Based on this, the generalize additive model from above would be the best to predict whether an individual's salary is above or below the median mark of $104,000.
+
+From the dataset, we wanted to set out and understand variables that are relevant to determining an individual's wage. After review, due to ethical and statistical reasons, we decided to focus on age, job class, year and education as variables that may impact the wage of an individual. From the various fitting of models, we determined that age, year and education do have impact in determining an individual's wage. In this process we ruled out job class from the models. After model selection, we have two models with nearly identical AIC values. First, a linear model fitted with polynomial variations of the predictor variables in order to identify non-linear trends between the data in this model returned an AIC of 27432.72. Next, a generalized additive model with smoothing splines was fitted to the same three predictor variables in order to fit a model that smoothed out the trend lines in a non-linear fashion returned an AIC of 27432.85. From this model, we are able to visual certain trends. Key examples are: first, wages appear to increase exponentially from ages 18-45 before leveling off. After age 45 we see a steady flat line trend before a downward trend begins around age 65. From this, we can see out peak age range for wage being somewhere between 45 and 65. Next, we see a relatively steady linear trend as years progress towards the present. Taking into this variable alone, we can understand that wages will continually increase following this trend. Lastly, in regards to education, we can see as education 'increases' so does wage. The more education a person has, the more likely their wage is to increase. To determine which model to follow, we looked at their prediction accuracy by revealing the error level for each model. In the end, the generalized additive model has a lower error and would be the best model selected for this scenario.
 
 # Problem 2
 ```{r}
@@ -151,7 +135,7 @@ head(data_seatbelts)
 # Create a list of dates
 dates<-seq(as.Date("1969-01-01"),as.Date("1984-12-01"),by="month")
 
-# Create new data name for coding purposes
+# Rename of data for coding purposes
 data_seatbelts_clean<-data_seatbelts
 
 # Create ds in regards to law
@@ -173,6 +157,39 @@ prophetmod1<-add_regressor(prophetmod1,"law")
 
 # Fit prophet model
 prophetmod1<-fit.prophet(prophetmod1,data_seatbelts_clean_train)
+
+# Create test dataset by removing the response column
+data_seatbelts_clean_test<-data_seatbelts_clean[,-6]
+
+# Predict future values
+forecast1<-predict(prophetmod1,data_seatbelts_clean_test)
+
+# Plot the predicted values
+plot(prophetmod1,forecast1)
+
+# Plot the prophet components
+prophet_plot_components(prophetmod1, forecast1)
+
+# Load the forecast library
+library(forecast)
+
+# Create time series for data_seatbelts_clean_train
+data_seatbelts_clean_trainTS<-ts(data_seatbelts_clean_train)
+
+# Fit ARIMA model to log of AirPassengers data
+auto.arima(data_seatbelts_clean_trainTS[,1])
+
+# Forecast next 10 periods for this ARIMA model
+amod1<-auto.arima(data_seatbelts_clean_trainTS[,1])
+amod1fs<-forecast(amod1,h=24)
+
+# Plot forecast for next 24 periods for this ARIMA model
+plot(amod1fs)
 ```
 
 ### Problem 2 Discussion
+The prophet model is a GAM approach that uses both seasonality components as a predictor and spline functions to better predict as compared to ARIMA. In this particular example, we wanted to predict what would have happened if the law for seat belt usage never went into effect. After cleaning up the data, we create a training dataset for all data points that occurred before January 31, 1983 as this is when the law went into effect. Initializing the prophet model on this training dataset, we can add in the coregressors after. Kms, PetrolPrice, and law are all added to the model, and it is fitted. To predict on our model, we create a test dataset where we drop the response variable from the training dataset. With this we can predict on the time series. From the initial graph, the predicted outcomes appear to follow prior data. The trend of the predicted data as well as seasonality is respected. From the prophet components plot, we can get a better look at trend and seasonality specifically. For trend, we see this slow downward turn of the data. For seasonality, we see a big spike around October/November. All in all, this prophet model fits extremely well and the confidence interval on the predicted data is good.
+
+In some aspects, yes, we can fit this same scenario with an ARIMA model to predict future values, but not as well as the prophet model. From the code above we can see that the ARIMA model's predicted values are more smooth - not respecting trend and seasonality as well as the prophet model. Also, the confidence intervals are much larger with the ARIMA model. The further out we forecast predicted values, the more flat line the predictions become and the larger the confidence intervals become. This comes from how ARIMA predicts data. First, ARIMA models struggle with predicting turning points or massive spikes in the data. Second, ARIMA models statistically show lack luster performance in predicting long-term forecasts. Lastly, ARIMA is not compatible for seasonal time series. These three downfalls of ARIMA, are where the generalized additive modeling aspects of prophet excel. This truly differentiates the two, and shows how prophet is the better choice here. 
+
+All in all, the prophet model is the better model. Due to the respect to seasonality, turning points of the data, and long term forecasting capabilities. The most important piece to note here is data leakage, specifically 'target leakage', because - if I am thinking about this correctly - in our training and test data sets for the prophet model, the value of law is always 0 and will always be 0 since we are looking at data points that have occurred before the law was enforced. The value of this variable is already known, even for a future time period that we are attempting to predict, because it will always have the same value. Accuracy of the model will prove this, as a model with high accuracy is most likely experiencing some sort of leakage.
